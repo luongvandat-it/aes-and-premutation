@@ -3,8 +3,12 @@ package GUI;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.swing.JOptionPane;
 
 public class Frm extends javax.swing.JFrame {
 
@@ -12,6 +16,7 @@ public class Frm extends javax.swing.JFrame {
         initComponents();
         setTitle("Nhom 12 _ Nhap mon An toan thong tin");
         setLocationRelativeTo(null);
+        cbLoaiMaHoa.setSelectedIndex(0);
     }
 
     public String encryptHoanVi(String plainText, int depth) throws Exception {
@@ -61,54 +66,80 @@ public class Frm extends javax.swing.JFrame {
         return plainText;
     }
 
-    public String decryptAES(String strToDecrypt, String myKey, int optionAES) {
+    public String encryptAES(String strToEncrypt, String myKey, int optionAES) {
         try {
-            String loaiMaHoaAES = "";
+
+            String loaiMaHoaAES;
             switch (optionAES) {
-                case 0 -> loaiMaHoaAES = "AES/ECB/PKCS5Padding";
-                case 1 -> loaiMaHoaAES = "AES/CBC/PKCS5Padding";
-                case 2 -> loaiMaHoaAES = "AES/CFB8/NoPadding";
-                case 3 -> loaiMaHoaAES = "AES/OFB32/PKCS5Padding";
-                default -> throw new AssertionError();
+                case 0:
+                    loaiMaHoaAES = "AES/ECB/PKCS5Padding";
+                    MessageDigest sha = MessageDigest.getInstance("SHA-1");
+                    byte[] key = myKey.getBytes("UTF-8");
+                    key = sha.digest(key);
+                    key = Arrays.copyOf(key, 16);
+                    SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
+                    Cipher cipher = Cipher.getInstance(loaiMaHoaAES);
+                    cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+                    return Base64.getEncoder().encodeToString(cipher.doFinal(strToEncrypt.getBytes("UTF-8")));
+
+                case 1:
+                    loaiMaHoaAES = "AES/CBC/PKCS5Padding";
+                    String keyCBC = myKey;
+                    String initVector = "encryptionIntVec";
+                    IvParameterSpec iv = new IvParameterSpec(initVector.getBytes("UTF-8"));
+                    SecretKeySpec skeySpec = new SecretKeySpec(keyCBC.getBytes("UTF-8"), "AES");
+                    Cipher cipherCBC = Cipher.getInstance(loaiMaHoaAES);
+                    cipherCBC.init(Cipher.ENCRYPT_MODE, skeySpec, iv);
+                    byte[] encrypted = cipherCBC.doFinal(strToEncrypt.getBytes("UTF-8"));
+                    return Base64.getEncoder().encodeToString(cipherCBC.doFinal(strToEncrypt.getBytes("UTF-8")));
+
+                case 2:
+                    loaiMaHoaAES = "AES/CFB8/NoPadding";
+                case 3:
+                    loaiMaHoaAES = "AES/OFB32/PKCS5Padding";
             }
-            MessageDigest sha = MessageDigest.getInstance("SHA-1");
-            byte[] key = myKey.getBytes("UTF-8");
-            key = sha.digest(key);
-            key = Arrays.copyOf(key, 16);
-            SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
-            Cipher cipher = Cipher.getInstance(loaiMaHoaAES);
-            cipher.init(Cipher.DECRYPT_MODE, secretKey);
-            return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)));
+
         } catch (Exception e) {
             System.out.println(e.toString());
         }
         return null;
     }
 
-    public String encryptAES(String strToEncrypt, String myKey, int optionAES) {
+    public String decryptAES(String strToDecrypt, String myKey, int optionAES) {
         try {
             String loaiMaHoaAES = "";
             switch (optionAES) {
-                case 0 -> loaiMaHoaAES = "AES/ECB/PKCS5Padding";
-                case 1 -> loaiMaHoaAES = "AES/CBC/PKCS5Padding";
-                case 2 -> loaiMaHoaAES = "AES/CFB8/NoPadding";
-                case 3 -> loaiMaHoaAES = "AES/OFB32/PKCS5Padding";
-                default -> throw new AssertionError();
+                case 0:
+                    loaiMaHoaAES = "AES/ECB/PKCS5Padding";
+                    MessageDigest sha = MessageDigest.getInstance("SHA-1");
+                    byte[] key = myKey.getBytes("UTF-8");
+                    key = sha.digest(key);
+                    key = Arrays.copyOf(key, 16);
+                    SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
+                    Cipher cipher = Cipher.getInstance(loaiMaHoaAES);
+                    cipher.init(Cipher.DECRYPT_MODE, secretKey);
+                    return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)));
+
+                case 1:
+                    loaiMaHoaAES = "AES/CBC/PKCS5Padding";
+                    String keyCBC = myKey;
+                    String initVector = "encryptionIntVec";
+                    IvParameterSpec iv = new IvParameterSpec(initVector.getBytes("UTF-8"));
+                    SecretKeySpec skeySpec = new SecretKeySpec(keyCBC.getBytes("UTF-8"), "AES");
+                    Cipher cipherCBC = Cipher.getInstance(loaiMaHoaAES);
+                    cipherCBC.init(Cipher.DECRYPT_MODE, skeySpec, iv);
+                    return new String(cipherCBC.doFinal(Base64.getDecoder().decode(strToDecrypt)));
+
+                case 2:
+                    loaiMaHoaAES = "AES/CFB8/NoPadding";
+                    break;
+                case 3:
+                    loaiMaHoaAES = "AES/OFB32/PKCS5Padding";
+                    break;
             }
 
-            MessageDigest sha = MessageDigest.getInstance("SHA-1");
-            byte[] key = myKey.getBytes("UTF-8");
-            key = sha.digest(key);
-            key = Arrays.copyOf(key, 16);
-            SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
-            Cipher cipher = Cipher.getInstance(loaiMaHoaAES);
-//          AES/CBC/PKCS5Padding
-//          AES/ECB/PKCS5Padding
-//          "AES/CFB8/NoPadding" and "AES/OFB32/PKCS5Padding"
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-            return Base64.getEncoder().encodeToString(cipher.doFinal(strToEncrypt.getBytes("UTF-8")));
         } catch (Exception e) {
-            System.out.println(e.toString());
+            e.printStackTrace();
         }
         return null;
     }
@@ -267,7 +298,7 @@ public class Frm extends javax.swing.JFrame {
         cbLoaiMaHoa.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Mã hóa hoán vị", "AES" }));
 
         cbLoaiAES.setFont(new java.awt.Font("Times New Roman", 0, 18)); // NOI18N
-        cbLoaiAES.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "EBC", "CBC", "CFB", "OFB" }));
+        cbLoaiAES.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "EBC", "CBC" }));
         cbLoaiAES.setPreferredSize(new java.awt.Dimension(70, 35));
 
         javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
@@ -365,22 +396,40 @@ public class Frm extends javax.swing.JFrame {
         String key = txtKey.getText();
         int chooseMaHoa = cbLoaiMaHoa.getSelectedIndex();
 
-        // Ma hoa hoan vi
-        try {
-            if (chooseMaHoa == 0) {
-                txtBanRo.setText(decryptHoanVi(banMa, Integer.parseInt(key)));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        switch (chooseMaHoa) {
+            case 0:
+                // Giai ma hoan vi
+                Pattern pattern = Pattern.compile("\\d*");
+                Matcher matcher = pattern.matcher(txtKey.getText().toString());
+                if (matcher.matches()) {
+                    try {
+                        if (chooseMaHoa == 0) {
+                            txtBanRo.setText(decryptHoanVi(banMa, Integer.parseInt(key)));
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Key phải là số!");
+                }
+                break;
 
-        // Ma hoa AES
-        try {
-            if (chooseMaHoa == 1) {
-                txtBanRo.setText(decryptAES(banMa, key, cbLoaiAES.getSelectedIndex()));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            case 1:
+                // Giai ma AES
+                if (txtKey.getText().length() == 16) {
+                    try {
+                        if (chooseMaHoa == 1) {
+                            txtBanRo.setText(decryptAES(banMa, key, cbLoaiAES.getSelectedIndex()));
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Độ dài key phải là 16!");
+                }
+                break;
+            default:
+                throw new AssertionError();
         }
     }//GEN-LAST:event_btnGiaiMaActionPerformed
 
@@ -390,22 +439,40 @@ public class Frm extends javax.swing.JFrame {
         String key = txtKey.getText();
         int chooseMaHoa = cbLoaiMaHoa.getSelectedIndex();
 
-        // Giai ma hoan vi
-        try {
-            if (chooseMaHoa == 0) {
-                txtBanMa.setText(encryptHoanVi(banRo, Integer.parseInt(key)));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        switch (chooseMaHoa) {
+            case 0:
+                // Giai ma hoan vi
+                Pattern pattern = Pattern.compile("\\d*");
+                Matcher matcher = pattern.matcher(txtKey.getText().toString());
+                if (matcher.matches()) {
+                    try {
+                        if (chooseMaHoa == 0) {
+                            txtBanMa.setText(encryptHoanVi(banRo, Integer.parseInt(key)));
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Key phải là số!");
+                }
+                break;
 
-        // Giai ma AES
-        try {
-            if (chooseMaHoa == 1) {
-                txtBanMa.setText(encryptAES(banRo, key, cbLoaiAES.getSelectedIndex()));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            case 1:
+                // Giai ma AES
+                if (txtKey.getText().length() == 16) {
+                    try {
+                        if (chooseMaHoa == 1) {
+                            txtBanMa.setText(encryptAES(banRo, key, cbLoaiAES.getSelectedIndex()));
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Độ dài key phải là 16!");
+                }
+                break;
+            default:
+                throw new AssertionError();
         }
     }//GEN-LAST:event_btnMaHoaActionPerformed
 
@@ -423,16 +490,24 @@ public class Frm extends javax.swing.JFrame {
                 if ("Nimbus".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;
+
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(Frm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(Frm.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
+
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(Frm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(Frm.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
+
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(Frm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(Frm.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
+
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(Frm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(Frm.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
 
