@@ -1,16 +1,15 @@
 package GUI;
 
-import java.security.MessageDigest;
-import java.util.Arrays;
-import java.util.Base64;
+import dao.AES;
+import dao.HoanVi;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JOptionPane;
 
 public class Frm extends javax.swing.JFrame {
+
+    private AES aes = new AES();
+    private HoanVi hoanVi = new HoanVi();
 
     public Frm() {
         initComponents();
@@ -64,84 +63,6 @@ public class Frm extends javax.swing.JFrame {
         }
 
         return plainText;
-    }
-
-    public String encryptAES(String strToEncrypt, String myKey, int optionAES) {
-        try {
-
-            String loaiMaHoaAES;
-            switch (optionAES) {
-                case 0:
-                    loaiMaHoaAES = "AES/ECB/PKCS5Padding";
-                    MessageDigest sha = MessageDigest.getInstance("SHA-1");
-                    byte[] key = myKey.getBytes("UTF-8");
-                    key = sha.digest(key);
-                    key = Arrays.copyOf(key, 16);
-                    SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
-                    Cipher cipher = Cipher.getInstance(loaiMaHoaAES);
-                    cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-                    return Base64.getEncoder().encodeToString(cipher.doFinal(strToEncrypt.getBytes("UTF-8")));
-
-                case 1:
-                    loaiMaHoaAES = "AES/CBC/PKCS5Padding";
-                    String keyCBC = myKey;
-                    String initVector = "encryptionIntVec";
-                    IvParameterSpec iv = new IvParameterSpec(initVector.getBytes("UTF-8"));
-                    SecretKeySpec skeySpec = new SecretKeySpec(keyCBC.getBytes("UTF-8"), "AES");
-                    Cipher cipherCBC = Cipher.getInstance(loaiMaHoaAES);
-                    cipherCBC.init(Cipher.ENCRYPT_MODE, skeySpec, iv);
-                    byte[] encrypted = cipherCBC.doFinal(strToEncrypt.getBytes("UTF-8"));
-                    return Base64.getEncoder().encodeToString(cipherCBC.doFinal(strToEncrypt.getBytes("UTF-8")));
-
-                case 2:
-                    loaiMaHoaAES = "AES/CFB8/NoPadding";
-                case 3:
-                    loaiMaHoaAES = "AES/OFB32/PKCS5Padding";
-            }
-
-        } catch (Exception e) {
-            System.out.println(e.toString());
-        }
-        return null;
-    }
-
-    public String decryptAES(String strToDecrypt, String myKey, int optionAES) {
-        try {
-            String loaiMaHoaAES = "";
-            switch (optionAES) {
-                case 0:
-                    loaiMaHoaAES = "AES/ECB/PKCS5Padding";
-                    MessageDigest sha = MessageDigest.getInstance("SHA-1");
-                    byte[] key = myKey.getBytes("UTF-8");
-                    key = sha.digest(key);
-                    key = Arrays.copyOf(key, 16);
-                    SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
-                    Cipher cipher = Cipher.getInstance(loaiMaHoaAES);
-                    cipher.init(Cipher.DECRYPT_MODE, secretKey);
-                    return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)));
-
-                case 1:
-                    loaiMaHoaAES = "AES/CBC/PKCS5Padding";
-                    String keyCBC = myKey;
-                    String initVector = "encryptionIntVec";
-                    IvParameterSpec iv = new IvParameterSpec(initVector.getBytes("UTF-8"));
-                    SecretKeySpec skeySpec = new SecretKeySpec(keyCBC.getBytes("UTF-8"), "AES");
-                    Cipher cipherCBC = Cipher.getInstance(loaiMaHoaAES);
-                    cipherCBC.init(Cipher.DECRYPT_MODE, skeySpec, iv);
-                    return new String(cipherCBC.doFinal(Base64.getDecoder().decode(strToDecrypt)));
-
-                case 2:
-                    loaiMaHoaAES = "AES/CFB8/NoPadding";
-                    break;
-                case 3:
-                    loaiMaHoaAES = "AES/OFB32/PKCS5Padding";
-                    break;
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     @SuppressWarnings("unchecked")
@@ -404,7 +325,8 @@ public class Frm extends javax.swing.JFrame {
                 if (matcher.matches()) {
                     try {
                         if (chooseMaHoa == 0) {
-                            txtBanRo.setText(decryptHoanVi(banMa, Integer.parseInt(key)));
+//                            txtBanRo.setText(decryptHoanVi(banMa, Integer.parseInt(key)));
+                            txtBanRo.setText(hoanVi.decryptHoanVi(banMa, Integer.parseInt(key)));
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -419,7 +341,7 @@ public class Frm extends javax.swing.JFrame {
                 if (txtKey.getText().length() == 16) {
                     try {
                         if (chooseMaHoa == 1) {
-                            txtBanRo.setText(decryptAES(banMa, key, cbLoaiAES.getSelectedIndex()));
+                            txtBanRo.setText(aes.decryptAES(banMa, key, cbLoaiAES.getSelectedIndex()));
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -447,7 +369,7 @@ public class Frm extends javax.swing.JFrame {
                 if (matcher.matches()) {
                     try {
                         if (chooseMaHoa == 0) {
-                            txtBanMa.setText(encryptHoanVi(banRo, Integer.parseInt(key)));
+                            txtBanMa.setText(hoanVi.encryptHoanVi(banRo, Integer.parseInt(key)));
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -462,7 +384,8 @@ public class Frm extends javax.swing.JFrame {
                 if (txtKey.getText().length() == 16) {
                     try {
                         if (chooseMaHoa == 1) {
-                            txtBanMa.setText(encryptAES(banRo, key, cbLoaiAES.getSelectedIndex()));
+//                            txtBanMa.setText(encryptAES(banRo, key, cbLoaiAES.getSelectedIndex()));
+                            txtBanMa.setText(aes.encryptAES(banRo, key, cbLoaiAES.getSelectedIndex()));
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
